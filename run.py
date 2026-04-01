@@ -1,6 +1,6 @@
 import pandas as pd
 from model import score
-from strategy import is_limit_up, strong_stock
+from strategy import limit_up_potential
 from notify import send
 
 
@@ -10,7 +10,7 @@ def main():
     results = []
 
     # ==============================
-    # 🔥 按股票分组（关键）
+    # 🔥 按股票分组
     # ==============================
     for code, df in df_all.groupby('ts_code'):
 
@@ -19,21 +19,15 @@ def main():
 
         df = df.sort_values(by='trade_date')
 
-        # 👉 打标签
-        limit_flag = is_limit_up(df)
-        strong_flag = strong_stock(df)
-
+        # ==============================
+        # 🔥 评分（核心）
+        # ==============================
         base_score = score(df)
+        strategy_score = limit_up_potential(df)
 
-        final_score = base_score
+        final_score = base_score + strategy_score
 
-        if limit_flag:
-            final_score += 20
-
-        if strong_flag:
-            final_score += 10
-
-        results.append((code, final_score, limit_flag, strong_flag))
+        results.append((code, final_score))
 
     # ==============================
     # 🔥 排序
@@ -45,8 +39,8 @@ def main():
     # ==============================
     msg = "🔥 今日涨停潜力股（Top10）：\n\n"
 
-    for code, s, l, st in results[:10]:
-        msg += f"{code} ⭐ {s} | 涨停:{l} 强势:{st}\n"
+    for code, s in results[:10]:
+        msg += f"{code} ⭐ {s}\n"
 
     print(msg)
 
