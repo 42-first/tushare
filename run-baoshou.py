@@ -32,10 +32,14 @@ def main():
         high = df['high']
 
         # ==============================
-        # 🔥 核心指标（短线版）
+        # 核心指标
         # ==============================
-        pct1 = close.pct_change().iloc[-1]      # 当日涨幅
-        pct3 = (close.iloc[-1] / close.iloc[-3]) - 1  # 3日涨幅
+        pct = close.pct_change()
+
+        pct1 = pct.iloc[-1]   # 今天
+        pct2 = pct.iloc[-2]   # 昨天
+        pct3 = (close.iloc[-1] / close.iloc[-3]) - 1
+        pct5 = (close.iloc[-1] / close.iloc[0]) - 1
 
         vol_ma3 = vol.rolling(3).mean().iloc[-1]
         vol_ratio = vol.iloc[-1] / (vol_ma3 + 1e-6)
@@ -45,76 +49,72 @@ def main():
         score = 0
 
         # ==============================
-        # 🔥 1️⃣ 爆发（最重要）
+        # 🔥 1️⃣ “突变”（最核心！！！）
         # ==============================
-        if pct1 > 0.05:
+        # 昨天弱，今天突然强
+        if pct2 < 0 and pct1 > 0.02:
+            score += 40
+
+        # 今天明显转强
+        if pct1 > 0.04:
             score += 30
-        elif pct1 > 0.03:
-            score += 20
-
-        if pct3 > 0.10:
-            score += 30
-        elif pct3 > 0.05:
-            score += 15
 
         # ==============================
-        # 🔥 2️⃣ 成交量（资金）
+        # 🔥 2️⃣ “突然放量”（主力进场）
         # ==============================
-        if vol_ratio > 2:
-            score += 25
-        elif vol_ratio > 1.3:
-            score += 15
-
-        # ==============================
-        # 🔥 3️⃣ 突破（龙头核心）
-        # ==============================
-        if close.iloc[-1] >= high_5 * 0.97:
+        if vol_ratio > 2.5:
+            score += 40
+        elif vol_ratio > 1.8:
             score += 25
 
         # ==============================
-        # 🔥 4️⃣ 连续上涨（情绪）
+        # 🔥 3️⃣ “低位异动”（重点）
         # ==============================
-        pct = close.pct_change()
+        if pct5 < 0.08:
+            score += 30   # 还没涨 → 最容易连板
 
-        if (pct.iloc[-3:] > 0).all():
+        # ==============================
+        # 🔥 4️⃣ “开始加速”
+        # ==============================
+        if pct3 > 0.04:
             score += 20
 
         # ==============================
-        # ❗ 风险过滤（关键）
+        # 🔥 5️⃣ “突破临界”
         # ==============================
-        if pct1 < 0:
-            score -= 30
+        if close.iloc[-1] >= high_5 * 0.93:
+            score += 25
 
         # ==============================
-        # 🔥 分级（一定要有）
+        # ❗ 反向信号（极弱才扣）
         # ==============================
-        if score >= 80:
-            level = "S"   # 龙头
-        elif score >= 60:
-            level = "A"   # 强势
-        elif score >= 45:
-            level = "B"   # 观察
+        if pct1 < -0.02:
+            score -= 20
+
+        # ==============================
+        # 🔥 极激进分级
+        # ==============================
+        if score >= 85:
+            level = "🔥点火龙头"
+        elif score >= 65:
+            level = "⚡资金试盘"
+        elif score >= 50:
+            level = "🪤潜伏标的"
         else:
             continue
 
         results.append((code, score, level))
 
     if not results:
-        print("⚠️ 无强势股（短线情绪很差）")
+        print("⚠️ 无结果（极端冰点行情）")
         return
 
-    # ==============================
-    # 🔥 排序
-    # ==============================
     results.sort(key=lambda x: x[1], reverse=True)
 
-    # ==============================
-    # 🔥 输出
-    # ==============================
-    msg = "🔥 超短线龙头候选（5日模型）：\n\n"
+    msg = "🚀 点火龙头候选（极激进版）：\n\n"
 
-    for code, s, lv in results[:10]:
-        msg += f"{code} ⭐ {s} | {lv}级\n"
+    for code, s, lv in results[:15]:
+        msg += f"{code} ⭐ {s} | {lv}\n"
 
     print(msg)
 

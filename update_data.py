@@ -14,7 +14,7 @@ DATA_FILE = "all_stock.csv"
 # ==============================
 # 🔥 自己生成日期（关键）
 # ==============================
-def get_recent_dates(days=40):
+def get_recent_dates(days=12):
     today = datetime.datetime.today()
     dates = []
 
@@ -28,8 +28,8 @@ def get_recent_dates(days=40):
 # ==============================
 # 🔥 自动识别交易日
 # ==============================
-def get_trade_dates(n=20):
-    dates = get_recent_dates(40)
+def get_trade_dates(n=5):
+    dates = get_recent_dates(12)
 
     trade_dates = []
 
@@ -57,7 +57,7 @@ def get_trade_dates(n=20):
 # 🔥 主逻辑
 # ==============================
 def update():
-    trade_dates = get_trade_dates(20)
+    trade_dates = get_trade_dates(5)
 
     print("📅 最终交易日:", trade_dates)
 
